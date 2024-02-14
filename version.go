@@ -7,7 +7,6 @@ import (
 	"io"
 	"strconv"
 	"strings"
-	"unicode"
 )
 
 // Format determines how a version is parsed and formatted.
@@ -20,15 +19,6 @@ const (
 	Dot
 	// Parse with comma as separator. Format as `0, 0, 0, 0`.
 	Comma
-	// Parse by guessing separator. Allows whitespace between components. Format
-	// as `0.0.0.0`.
-	AnySpace
-	// Parse with dot as separator. Allows whitespace between components. Format
-	// as `0.0.0.0`.
-	DotSpace
-	// Parse with commas as separator. Allows whitespace between components.
-	// Format as `0, 0, 0, 0`.
-	CommaSpace
 )
 
 // Version represents the version of a Roblox build. Versions can be compared
@@ -55,11 +45,9 @@ func formatInt(b *strings.Builder, i int) {
 func (v Version) Format(f Format) string {
 	var sep string
 	switch f {
-	case Any, Dot, AnySpace, DotSpace:
+	case Any, Dot:
 		sep = "."
 	case Comma:
-		sep = ","
-	case CommaSpace:
 		sep = ", "
 	default:
 		panic("invalid format")
@@ -116,18 +104,20 @@ func parseInt(comp *int, b *[]byte) bool {
 // Expects sep at the start of b. If *sep is nil, then the separator will be
 // guessed, and sep is set to the guessed separator. b is set to the index after
 // the parsed separator and any whitespace.
-func parseSep(sep *[]byte, ws bool, b *[]byte) error {
-	if ws {
-		*b = bytes.TrimLeftFunc(*b, unicode.IsSpace)
-	}
+func parseSep(sep *[]byte, b *[]byte) error {
 	if len(*b) == 0 {
 		return io.ErrUnexpectedEOF
 	}
 	if *sep == nil {
 		// Guess separator. This will be used for subsequent separators.
 		switch (*b)[0] {
-		case '.', ',':
+		case '.':
 			*sep = (*b)[:1]
+		case ',':
+			if len(*b) < 2 || (*b)[1] != ' ' {
+				return ErrSyntax
+			}
+			*sep = (*b)[:2]
 		default:
 			return ErrSyntax
 		}
@@ -140,9 +130,6 @@ func parseSep(sep *[]byte, ws bool, b *[]byte) error {
 		}
 	}
 	*b = (*b)[len(*sep):]
-	if ws {
-		*b = bytes.TrimLeftFunc(*b, unicode.IsSpace)
-	}
 	return nil
 }
 
@@ -157,55 +144,40 @@ var ErrSyntax = errors.New("invalid syntax")
 // Panics if f is not valid format.
 func Parse(b []byte, f Format) (v Version, n int, err error) {
 	var sep []byte
-	var ws bool
 	switch f {
 	case Any:
 	case Dot:
 		sep = []byte{'.'}
 	case Comma:
-		sep = []byte{','}
-	case AnySpace:
-		ws = true
-	case DotSpace:
-		sep = []byte{'.'}
-		ws = true
-	case CommaSpace:
-		sep = []byte{','}
-		ws = true
+		sep = []byte{',', ' '}
 	default:
 		panic("invalid format")
 	}
 
 	l := len(b)
-	if ws {
-		b = bytes.TrimLeftFunc(b, unicode.IsSpace)
-	}
 	if len(b) == 0 {
 		return v, l - len(b), io.ErrUnexpectedEOF
 	}
 	if !parseInt(&v.Generation, &b) {
 		return v, l - len(b), ErrSyntax
 	}
-	if err := parseSep(&sep, ws, &b); err != nil {
+	if err := parseSep(&sep, &b); err != nil {
 		return v, l - len(b), err
 	}
 	if !parseInt(&v.Version, &b) {
 		return v, l - len(b), ErrSyntax
 	}
-	if err := parseSep(&sep, ws, &b); err != nil {
+	if err := parseSep(&sep, &b); err != nil {
 		return v, l - len(b), err
 	}
 	if !parseInt(&v.Patch, &b) {
 		return v, l - len(b), ErrSyntax
 	}
-	if err := parseSep(&sep, ws, &b); err != nil {
+	if err := parseSep(&sep, &b); err != nil {
 		return v, l - len(b), err
 	}
 	if !parseInt(&v.Commit, &b) {
 		return v, l - len(b), ErrSyntax
-	}
-	if ws {
-		b = bytes.TrimLeftFunc(b, unicode.IsSpace)
 	}
 	return v, l - len(b), nil
 }
