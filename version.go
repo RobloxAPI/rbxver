@@ -3,6 +3,7 @@ package rbxver
 
 import (
 	"bytes"
+	"encoding/json"
 	"errors"
 	"io"
 	"strconv"
@@ -86,6 +87,31 @@ func (v Version) Compare(u Version) int {
 		return 1
 	}
 	return 0
+}
+
+// Implements json.Marshaler.
+func (v Version) MarshalJSON() (b []byte, err error) {
+	b = append(b, '"')
+	b = append(b, v.String()...)
+	b = append(b, '"')
+	return b, nil
+}
+
+// Implements json.Unmarshaler.
+func (v *Version) UnmarshalJSON(b []byte) error {
+	var s string
+	if err := json.Unmarshal(b, &s); err != nil {
+		return err
+	}
+	u, n, err := Parse([]byte(s), v.Format)
+	if err != nil {
+		return err
+	}
+	if n != len(s) {
+		return ErrSyntax
+	}
+	*v = u
+	return nil
 }
 
 // Parses an integer from b to comp. Returns false if an error occurred when
