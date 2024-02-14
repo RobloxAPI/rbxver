@@ -64,21 +64,28 @@ func (v Version) String() string {
 	return b.String()
 }
 
-// Less returns true if v is semantically lower than u, and false otherwise.
-func (v Version) Less(u Version) bool {
-	if v.Generation < u.Generation {
-		return true
+// Compare returns -1 if v is semantically lower than u, 1 if v is semantically
+// higher than u, and 0 if v is semantically equal to u.
+func (v Version) Compare(u Version) int {
+	switch {
+	case v.Generation < u.Generation:
+		return -1
+	case v.Generation > u.Generation:
+		return 1
+	case v.Version < u.Version:
+		return -1
+	case v.Version > u.Version:
+		return 1
+	case v.Patch < u.Patch:
+		return -1
+	case v.Patch > u.Patch:
+		return 1
+	case v.Commit < u.Commit:
+		return -1
+	case v.Commit > u.Commit:
+		return 1
 	}
-	if v.Version < u.Version {
-		return true
-	}
-	if v.Patch < u.Patch {
-		return true
-	}
-	if v.Commit < u.Commit {
-		return true
-	}
-	return false
+	return 0
 }
 
 // Parses an integer from b to comp. Returns false if an error occurred when
