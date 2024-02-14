@@ -34,10 +34,10 @@ const (
 // Version represents the version of a Roblox build. Versions can be compared
 // for equality.
 type Version struct {
-	Major int // The first component.
-	Minor int // The second component.
-	Patch int // The third component.
-	Maint int // The fourth component.
+	Generation int // The first component.
+	Version    int // The second component.
+	Patch      int // The third component.
+	Commit     int // The fourth component.
 }
 
 // Formats i, writing to b. Writes 0 if i is less than 0.
@@ -65,13 +65,13 @@ func (v Version) Format(f Format) string {
 		panic("invalid format")
 	}
 	var b strings.Builder
-	formatInt(&b, v.Major)
+	formatInt(&b, v.Generation)
 	b.WriteString(sep)
-	formatInt(&b, v.Minor)
+	formatInt(&b, v.Version)
 	b.WriteString(sep)
 	formatInt(&b, v.Patch)
 	b.WriteString(sep)
-	formatInt(&b, v.Maint)
+	formatInt(&b, v.Commit)
 	return b.String()
 }
 
@@ -82,16 +82,16 @@ func (v Version) String() string {
 
 // Less returns true if v is semantically lower than u, and false otherwise.
 func (v Version) Less(u Version) bool {
-	if v.Major < u.Major {
+	if v.Generation < u.Generation {
 		return true
 	}
-	if v.Minor < u.Minor {
+	if v.Version < u.Version {
 		return true
 	}
 	if v.Patch < u.Patch {
 		return true
 	}
-	if v.Maint < u.Maint {
+	if v.Commit < u.Commit {
 		return true
 	}
 	return false
@@ -183,13 +183,13 @@ func Parse(b []byte, f Format) (v Version, n int, err error) {
 	if len(b) == 0 {
 		return v, l - len(b), io.ErrUnexpectedEOF
 	}
-	if !parseInt(&v.Major, &b) {
+	if !parseInt(&v.Generation, &b) {
 		return v, l - len(b), ErrSyntax
 	}
 	if err := parseSep(&sep, ws, &b); err != nil {
 		return v, l - len(b), err
 	}
-	if !parseInt(&v.Minor, &b) {
+	if !parseInt(&v.Version, &b) {
 		return v, l - len(b), ErrSyntax
 	}
 	if err := parseSep(&sep, ws, &b); err != nil {
@@ -201,7 +201,7 @@ func Parse(b []byte, f Format) (v Version, n int, err error) {
 	if err := parseSep(&sep, ws, &b); err != nil {
 		return v, l - len(b), err
 	}
-	if !parseInt(&v.Maint, &b) {
+	if !parseInt(&v.Commit, &b) {
 		return v, l - len(b), ErrSyntax
 	}
 	if ws {
