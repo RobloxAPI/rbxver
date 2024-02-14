@@ -105,7 +105,7 @@ func parseInt(comp *int, b *[]byte) bool {
 // guessed, and sep is set to the guessed separator. b is set to the index after
 // the parsed separator and any whitespace.
 func parseSep(sep *[]byte, b *[]byte) error {
-	if len(*b) == 0 {
+	if len(*b) < 2 {
 		return io.ErrUnexpectedEOF
 	}
 	if *sep == nil {
@@ -114,7 +114,7 @@ func parseSep(sep *[]byte, b *[]byte) error {
 		case '.':
 			*sep = (*b)[:1]
 		case ',':
-			if len(*b) < 2 || (*b)[1] != ' ' {
+			if (*b)[1] != ' ' {
 				return ErrSyntax
 			}
 			*sep = (*b)[:2]
