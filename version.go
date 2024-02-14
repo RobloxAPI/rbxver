@@ -103,7 +103,7 @@ func (v *Version) UnmarshalJSON(b []byte) error {
 	if err := json.Unmarshal(b, &s); err != nil {
 		return err
 	}
-	u, n, err := Parse([]byte(s), v.Format)
+	u, n, err := ParseBytes([]byte(s), v.Format)
 	if err != nil {
 		return err
 	}
@@ -165,13 +165,13 @@ func parseSep(sep *[]byte, b *[]byte) error {
 // ErrSyntax indicates a syntax error while parsing a version string.
 var ErrSyntax = errors.New("invalid syntax")
 
-// Parse parses a version from b according to f. Leading and trailing whitespace
-// is ignored, as well as whitespace between components. err will be ErrSyntax
-// if the syntax is invalid, or io.ErrUnexpectedEOF if b does not have enough
-// bytes to correctly parse the version.
+// ParseBytes parses a version from b according to f. Leading and trailing
+// whitespace is ignored, as well as whitespace between components. err will be
+// ErrSyntax if the syntax is invalid, or io.ErrUnexpectedEOF if b does not have
+// enough bytes to correctly parse the version.
 //
 // Panics if f is not valid format.
-func Parse(b []byte, f Format) (v Version, n int, err error) {
+func ParseBytes(b []byte, f Format) (v Version, n int, err error) {
 	var sep []byte
 	switch f {
 	case Any:
@@ -219,10 +219,10 @@ func Parse(b []byte, f Format) (v Version, n int, err error) {
 	return v, l - len(b), nil
 }
 
-// Parses a version from s according to f. Returns the zero version if a version
-// could not be parsed.
-func ParseString(s string, f Format) Version {
-	if v, n, err := Parse([]byte(s), f); err == nil && n == len(s) {
+// Parse parses a version from s according to f. Returns the zero version if a
+// version could not be parsed.
+func Parse(s string, f Format) Version {
+	if v, n, err := ParseBytes([]byte(s), f); err == nil && n == len(s) {
 		return v
 	}
 	return Version{}

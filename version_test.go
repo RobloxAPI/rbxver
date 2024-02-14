@@ -5,14 +5,14 @@ import (
 	"testing"
 )
 
-// Tests for Parse and ParseString.
+// Tests for ParseBytes and Parse.
 var tests = []struct {
 	s   string   // Input string.
 	f   Format   // Input format.
 	v   Version  // Expected version.
 	n   int      // Expected read bytes.
 	e   error    // Expected error.
-	str *Version // If ParseString, only compare this.
+	str *Version // If Parse, only compare this.
 }{
 	{s: "", f: Any, v: Version{0, 0, 0, 0, Any}, n: 0, e: io.ErrUnexpectedEOF},
 	{s: "", f: Dot, v: Version{0, 0, 0, 0, Any}, n: 0, e: io.ErrUnexpectedEOF},
@@ -75,24 +75,24 @@ var fmtstr = [...]string{
 	"Comma",
 }
 
-func TestParse(t *testing.T) {
+func TestParseBytes(t *testing.T) {
 	for _, test := range tests {
-		v, n, err := Parse([]byte(test.s), test.f)
+		v, n, err := ParseBytes([]byte(test.s), test.f)
 		if v != test.v {
-			t.Errorf("Parse(%q, %s): expected version %v, got %v", test.s, fmtstr[test.f], test.v, v)
+			t.Errorf("ParseBytes(%q, %s): expected version %v, got %v", test.s, fmtstr[test.f], test.v, v)
 		}
 		if n != test.n {
-			t.Errorf("Parse(%q, %s): expected bytes %d, got %d", test.s, fmtstr[test.f], test.n, n)
+			t.Errorf("ParseBytes(%q, %s): expected bytes %d, got %d", test.s, fmtstr[test.f], test.n, n)
 		}
 		if err != test.e {
-			t.Errorf("Parse(%q, %s): expected error %v, got %v", test.s, fmtstr[test.f], test.e, err)
+			t.Errorf("ParseBytes(%q, %s): expected error %v, got %v", test.s, fmtstr[test.f], test.e, err)
 		}
 	}
 }
 
-func TestParseString(t *testing.T) {
+func TestParse(t *testing.T) {
 	for _, test := range tests {
-		v := ParseString(test.s, test.f)
+		v := Parse(test.s, test.f)
 		if test.str != nil {
 			if v != *test.str {
 				t.Errorf("Parse(%q, %s): expected version %v, got %v", test.s, fmtstr[test.f], *test.str, v)
