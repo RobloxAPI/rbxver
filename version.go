@@ -28,6 +28,9 @@ type Version struct {
 	Version    int // The second component.
 	Patch      int // The third component.
 	Commit     int // The fourth component.
+
+	// How the version was formatted, or how to format the version.
+	Format Format
 }
 
 // Formats i, writing to b. Writes 0 if i is less than 0.
@@ -39,18 +42,16 @@ func formatInt(b *strings.Builder, i int) {
 	b.Write(strconv.AppendInt(nil, int64(i), 10))
 }
 
-// Format formats v according to f.
-//
-// Panics if f is not valid format.
-func (v Version) Format(f Format) string {
+// String returns v as a string according to v.Format.
+func (v Version) String() string {
 	var sep string
-	switch f {
+	switch v.Format {
+	default:
+		fallthrough
 	case Any, Dot:
 		sep = "."
 	case Comma:
 		sep = ", "
-	default:
-		panic("invalid format")
 	}
 	var b strings.Builder
 	formatInt(&b, v.Generation)
@@ -61,11 +62,6 @@ func (v Version) Format(f Format) string {
 	b.WriteString(sep)
 	formatInt(&b, v.Commit)
 	return b.String()
-}
-
-// String returns v as a string in the default format (dot).
-func (v Version) String() string {
-	return v.Format(Any)
 }
 
 // Less returns true if v is semantically lower than u, and false otherwise.
@@ -179,6 +175,14 @@ func Parse(b []byte, f Format) (v Version, n int, err error) {
 	if !parseInt(&v.Commit, &b) {
 		return v, l - len(b), ErrSyntax
 	}
+
+	switch sep[0] {
+	case '.':
+		v.Format = Dot
+	case ',':
+		v.Format = Comma
+	}
+
 	return v, l - len(b), nil
 }
 
